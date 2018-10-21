@@ -1,0 +1,7 @@
+[package]
+name = "cfind"
+version = "0.1.0"
+authors = ["Chathura Colombage <dcdewaka@gmail.com>"]
+
+[dependencies]
+walkdir = "2"
