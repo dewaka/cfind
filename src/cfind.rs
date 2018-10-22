@@ -3,13 +3,11 @@ use std::fs;
 use std::path::Path;
 use walkdir::WalkDir;
 
-#[derive(Debug, Clone)]
-pub struct Config {
-    pub find_all: bool,
-    pub regex: bool,
+struct Config {
+    find_all: bool,
+    regex: bool,
 }
 
-#[derive(Debug, Clone)]
 pub struct Searcher {
     config: Config,
 }
@@ -54,10 +52,24 @@ impl Matcher {
 
 impl Searcher {
     // TODO: Better error handling
-    // TODO: Regex based matching
 
-    pub fn new(config: Config) -> Searcher {
-        Searcher { config }
+    pub fn build() -> Self {
+        Searcher {
+            config: Config {
+                find_all: false,
+                regex: true,
+            },
+        }
+    }
+
+    pub fn regex(mut self, reg: bool) -> Self {
+        self.config.regex = reg;
+        self
+    }
+
+    pub fn find_all(mut self, all: bool) -> Self {
+        self.config.find_all = all;
+        self
     }
 
     // What we need to do is search for the given needle starting from the start
@@ -123,9 +135,6 @@ impl Searcher {
     }
 
     fn is_root(&self, path: &Path) -> bool {
-        match path.parent() {
-            None => true,
-            Some(_) => false,
-        }
+        path.parent().is_none()
     }
 }

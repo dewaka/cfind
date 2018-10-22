@@ -4,21 +4,21 @@ extern crate walkdir;
 
 mod cfind;
 
-use cfind::{Config, Searcher};
+use cfind::Searcher;
 use clap::{App, Arg};
 
 fn main() {
-    let matches = App::new("rename: bulk rename")
+    let matches = App::new("cfind: close file find")
         .version("0.1")
         .author("Chathura C. <dcdewaka@gmail.com>")
         .about("Find a file or directory by walking up parent directories")
         .arg(
-            Arg::with_name("directory")
-                .short("d")
+            Arg::with_name("path")
+                .short("p")
                 .required(false)
                 .takes_value(true)
                 .multiple(false)
-                .help("Directory to start search from. Default is the current directory."),
+                .help("Path to start search from (default is current directory)"),
         ).arg(
             Arg::with_name("search")
                 .index(1)
@@ -46,12 +46,8 @@ fn main() {
     let is_exact = matches.occurrences_of("exact") > 0;
     let is_all = matches.occurrences_of("all") > 0;
 
-    let config = Config {
-        find_all: is_all,
-        regex: !is_exact,
-    };
+    let searcher = Searcher::build().regex(!is_exact).find_all(is_all);
 
-    let searcher = Searcher::new(config);
     let results = searcher.search(dir, search);
 
     if results.is_empty() {
