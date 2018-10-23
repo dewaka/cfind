@@ -21,7 +21,9 @@ impl Matcher {
     fn matches(&self, path: &Path) -> bool {
         match path.file_name() {
             Some(fname) => {
-                let sname = fname.to_str().unwrap();
+                let sname = fname
+                    .to_str()
+                    .expect("Could not convert path's file name to string!");
 
                 match self.regex_term {
                     Some(ref re) => re.is_match(sname),
@@ -35,10 +37,10 @@ impl Matcher {
         }
     }
 
-    fn new(term: &str, is_regex: bool) -> Matcher {
+    fn new(term: &str, is_regex: bool) -> Self {
         if is_regex {
             Matcher {
-                regex_term: Some(Regex::new(term).unwrap()),
+                regex_term: Some(Regex::new(term).expect(&format!("Invalid regex: {}", term))),
                 exact_term: None,
             }
         } else {
@@ -72,18 +74,15 @@ impl Searcher {
         self
     }
 
-    // What we need to do is search for the given needle starting from the start
-    // path till we reach the root
-    pub fn search(&self, start: &str, needle: &str) -> Vec<String> {
-        let mut results = vec![];
-
-        let start_canonical = fs::canonicalize(start).unwrap();
-        let mut current_path = Path::new(&start_canonical);
+    fn search_in_dir(&self, dir: &str, needle: &str, results: &mut Vec<String>) {
+        let dir_canonical =
+            fs::canonicalize(dir).expect(&format!("Path canonicalization failed for: {}", dir));
+        let mut current_path = Path::new(&dir_canonical);
 
         let matcher = Matcher::new(needle, self.config.regex);
 
         loop {
-            if self.find_in(&current_path, &matcher, &mut results) {
+            if self.find_in(&current_path, &matcher, results) {
                 // We have found the needle, and we only have to continue if we
                 // need to find all possible matches
                 if !self.config.find_all {
@@ -110,6 +109,16 @@ impl Searcher {
                 }
             }
         }
+    }
+
+    // What we need to do is search for the given needle starting from the start
+    // path till we reach the root
+    pub fn search(&self, dirs: &[&str], needle: &str) -> Vec<String> {
+        let mut results = vec![];
+
+        for dir in dirs {
+            self.search_in_dir(dir, needle, &mut results);
+        }
 
         results
     }
@@ -118,12 +127,19 @@ impl Searcher {
         let mut found = false;
 
         for entry in WalkDir::new(path).max_depth(1) {
-            let current = entry.unwrap();
+            let current = entry.expect(&format!("WalkDir entry failed for path: {:?}", path));
             let entry_path = current.path();
 
             if matcher.matches(&entry_path) {
                 found = true;
-                results.push(entry_path.to_str().unwrap().to_string());
+                results.push(
+                    entry_path
+                        .to_str()
+                        .expect(&format!(
+                            "Path to string conversion failed for: {:?}",
+                            entry_path
+                        )).to_string(),
+                );
 
                 if !self.config.find_all {
                     break;
