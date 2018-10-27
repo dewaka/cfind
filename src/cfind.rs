@@ -53,8 +53,6 @@ impl Matcher {
 }
 
 impl Searcher {
-    // TODO: Better error handling
-
     pub fn build() -> Self {
         Searcher {
             config: Config {
@@ -99,14 +97,10 @@ impl Searcher {
             // searching
             match current_path.parent() {
                 Some(path) => current_path = path,
-                None => {
-                    // TODO: Better error handling
-                    println!(
-                        "Error - couldn't move up folder from: {:?}",
-                        current_path.to_str()
-                    );
-                    break;
-                }
+                None => panic!(format!(
+                    "Error - couldn't move up folder from: {:?}",
+                    current_path.to_str()
+                )),
             }
         }
     }
@@ -116,9 +110,8 @@ impl Searcher {
     pub fn search(&self, dirs: &[&str], needle: &str) -> Vec<String> {
         let mut results = vec![];
 
-        for dir in dirs {
-            self.search_in_dir(dir, needle, &mut results);
-        }
+        dirs.iter()
+            .for_each(|dir| self.search_in_dir(dir, needle, &mut results));
 
         results
     }

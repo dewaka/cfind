@@ -61,7 +61,5 @@ fn main() {
         std::process::exit(1);
     }
 
-    for res in results {
-        println!("{}", res);
-    }
+    results.iter().for_each(|res| println!("{}", res));
 }
